@@ -186,8 +186,7 @@
 | `times`           | Access, modification, and creation times          |
 
 
-```markdown
-# Zeek HTTP Log Queries for SOC Analysts
+# Zeek HTTP Log Queries for SOC 
 
 Here are useful `zeek-cut` queries for analyzing HTTP logs, which SOC analysts can use to identify potential security incidents and suspicious patterns in network traffic.
 
