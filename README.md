@@ -185,3 +185,11 @@
 | `prev_name`       | Previous name (if renamed)                        |
 | `times`           | Access, modification, and creation times          |
 
+
+### Miscellaneous Useful Command
+
+#### Search Logs by <data_to_search> and Order by Time
+
+```bash
+grep "data_to_search" *.log | awk -F':' '{print $2 ":" $0}' | sort -k1,1n | cut -d':' -f2-
+```
