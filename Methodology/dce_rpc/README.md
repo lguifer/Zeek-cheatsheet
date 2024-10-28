@@ -1,74 +1,56 @@
 
-### DCE/RPC Cheat Sheet
+## 1. View All DCE RPC Operations
+This query retrieves all DCE RPC operations logged in the `dce_rpc.log`.
 
-#### 1. **Service Control Operations**
-These operations manage Windows services through the Service Control Manager (SCM).
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' ts uid id.orig_h id.orig_p id.resp_h id.resp_p rtt named_pipe endpoint operation
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `OpenSCManagerW`                  | Opens a handle to the service control manager.                         |
-| `CreateServiceWOW64A`             | Creates a new service.                                                  |
-| `StartServiceA`                   | Starts a service that has been created but is not running.             |
-| `StopService`                      | Stops a running service.                                                |
-| `DeleteService`                    | Deletes a service from the service control manager.                    |
-| `QueryServiceStatus`               | Queries the status of a service.                                       |
-| `ChangeServiceConfig`             | Changes the configuration of an existing service.                      |
-| `CloseServiceHandle`               | Closes a handle to a service.                                          |
+## 2. Count DCE RPC Operations by Source IP
+This query counts how many DCE RPC operations each source IP performed.
 
-#### 2. **Registry Operations**
-These operations manipulate the Windows Registry.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' id.orig_h operation | sort | uniq -c | sort -nr
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `BaseRegCreateKey`                | Creates a new registry key.                                            |
-| `BaseRegSetValue`                 | Sets the value of a registry key.                                      |
-| `BaseRegDeleteValue`              | Deletes a value from a registry key.                                   |
-| `BaseRegOpenKey`                  | Opens an existing registry key.                                        |
-| `BaseRegQueryValue`               | Retrieves the value of a registry key.                                 |
-| `BaseRegDeleteKey`                | Deletes a registry key.                                                |
-| `BaseRegEnumKey`                  | Enumerates subkeys of a specified registry key.                        |
+## 3. Identify Unique DCE RPC Connections
+To identify unique DCE RPC connections and their respective operations, you can use:
 
-#### 3. **Authentication and Security Operations**
-These operations deal with authentication mechanisms in Windows.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' id.orig_h id.orig_p id.resp_h id.resp_p named_pipe operation | sort -u
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `ImpersonateNamedPipeClient`       | Allows a server to impersonate a client.                               |
-| `RevertToSelf`                    | Reverts the impersonation back to the original security context.       |
-| `SetSecurityObject`               | Sets the security descriptor for a specified object.                   |
-| `GetSecurityObject`               | Retrieves the security descriptor for a specified object.              |
+## 4. Filter for Specific DCE RPC Operations (e.g., OpenSCManagerW, CreateService)
+If you want to filter for specific operations such as `OpenSCManagerW` and `CreateService`, use:
 
-#### 4. **File Operations**
-These operations manage file access and manipulation.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' ts id.orig_h id.orig_p id.resp_h id.resp_p named_pipe operation | grep -E "OpenSCManagerW|CreateService"
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `NtCreateFile`                    | Creates or opens a file.                                               |
-| `NtReadFile`                      | Reads data from a file.                                               |
-| `NtWriteFile`                     | Writes data to a file.                                                |
-| `NtDeleteFile`                    | Deletes a file.                                                       |
+## 5. Count Operations Per Named Pipe
+This query counts how many operations each named pipe has performed.
 
-#### 5. **Process and Thread Operations**
-These operations manage processes and threads in the system.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' named_pipe operation | sort | uniq -c | sort -nr
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `CreateProcess`                   | Creates a new process and its primary thread.                          |
-| `OpenProcess`                     | Opens an existing local process.                                       |
-| `TerminateProcess`                | Ends the specified process.                                            |
-| `CreateRemoteThread`              | Creates a thread that runs in the virtual address space of another process. |
+## 6. Identify Suspicious Source IPs
+To identify source IPs that are performing an unusually high number of DCE RPC operations, you can combine sorting and counting:
 
-#### 6. **Network Operations**
-These operations manage network connections and configurations.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' id.orig_h | sort | uniq -c | sort -nr | head -n 10
+```
 
-| **Operation**                      | **Description**                                                          |
-|------------------------------------|--------------------------------------------------------------------------|
-| `NetrServerConnect`               | Establishes a connection to a server.                                  |
-| `NetrShareAdd`                    | Adds a new share on the server.                                       |
-| `NetrShareDel`                    | Deletes a share on the server.                                        |
+## 7. Track Operations Over Time
+If you want to track DCE RPC operations over a specific time range, for example, within the last hour, you can adjust the `ts` filtering accordingly.
 
-### Tips for Usage
-- **Understanding Context**: Most of these operations are used in the context of exploitation and lateral movement in Windows environments.
-- **Mitre ATT&CK Mapping**: Many of these RPC calls relate to MITRE ATT&CK techniques, particularly in the execution and persistence tactics.
-- **Security Monitoring**: Monitor the usage of these calls in your environment as they may indicate suspicious activities.
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' ts id.orig_h operation | awk -v date="$(date -d '1 hour ago' '+%Y-%m-%d %H:%M:%S')" '$1 > date'
+```
 
+## 8. List All Operations to a Specific Named Pipe
+To see all DCE RPC operations directed at a specific named pipe, replace `PIPE_NAME` with the actual named pipe:
+
+```bash
+cat dce_rpc.log | zeek-cut -d '\t' ts id.orig_h id.orig_p operation | grep 'PIPE_NAME'
+```
