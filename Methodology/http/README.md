@@ -1,5 +1,3 @@
----
-
 ### Analyzing `http.log` for Anomalous Behaviors
 
 As a SOC analyst focusing on `http.log`, here are several relevant queries to analyze anomalous behaviors that may indicate reconnaissance or other suspicious activities, along with interpretations of the results:
