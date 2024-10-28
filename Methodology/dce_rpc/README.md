@@ -1,112 +1,74 @@
 
-### Cheat Sheet for DCE/RPC Calls Used by Attackers
+### DCE/RPC Cheat Sheet
 
-| RPC Call                          | Description                                                                                       | Expected Use Case                      | Potential Malicious Activity                                      |
-|-----------------------------------|---------------------------------------------------------------------------------------------------|----------------------------------------|------------------------------------------------------------------|
-| **NetShareEnum**                  | Enumerates shared resources on a server.                                                        | Normal administrative tasks.           | Attackers enumerating shares for sensitive information.          |
-| **NetSessionEnum**                | Retrieves sessions connected to shared resources.                                                | Normal monitoring of sessions.         | Gathering active session details for further exploitation.       |
-| **SamrLookupNamesInDomain**       | Looks up user names in a domain.                                                                  | User management.                       | Reconnaissance for user accounts to facilitate attacks.          |
-| **SamrEnumerateDomainsInSam**     | Enumerates domains in a security account manager (SAM).                                          | Domain management.                     | Identifying domains for lateral movement.                        |
-| **SetSecurityObject**             | Modifies security descriptors on objects.                                                         | Administering permissions.             | Unauthorized changes to security settings.                       |
-| **DcomCreate**                    | Creates a DCOM object on the remote machine.                                                    | Application initialization.            | Malicious application launches or remote execution.              |
-| **ServiceControl**                | Sends commands to control services on the remote system.                                        | Service management.                    | Stopping critical services or malicious service installation.    |
-| **NetUserEnum**                   | Enumerates users on a server.                                                                    | User management.                       | Gathering user information for targeted attacks.                 |
-| **RpcMgmtStopServer**            | Stops the RPC server for a specified interface.                                                 | Server maintenance.                    | Disabling services to hide malicious activity.                   |
-| **DcomConnect**                   | Establishes a DCOM connection to a remote service.                                              | Remote procedure calls.                | Establishing backdoor access.                                    |
-| **NetRemoteTOD**                  | Retrieves time of day information from a remote server.                                          | Normal synchronization tasks.          | Time manipulation for log evasion.                               |
-| **NetrFileEnum**                  | Enumerates files on a shared resource.                                                            | Normal file sharing.                   | Scanning for sensitive files to exfiltrate.                     |
-| **NetrUserGetInfo**               | Retrieves detailed information about a user.                                                     | Normal user account management.        | Gathering detailed user account information for attacks.         |
-| **NetrServerReqChallenge**        | Used for authentication to servers and can be leveraged to gain unauthorized access.            | Server authentication and validation.  | Attackers attempting to authenticate without proper credentials.  |
-| **RExec**                         | Remote execution of commands.                                                                    | Running commands on remote machines.   | Attackers executing malicious commands remotely.                 |
-| **NetrLogonSamLogon**             | Authenticates users and can be exploited for credential harvesting.                             | User login processes.                  | Credential theft or replay attacks.                             |
-| **Remote Command Invocation**      | General method for executing commands on remote systems.                                        | Remote administration.                 | Executing unauthorized commands or scripts.                     |
-| **DcomExecute**                   | Executes a DCOM method on a remote server.                                                      | Remote management of applications.     | Malicious command execution through DCOM interfaces.            |
-| **NetrRemoteAdmin**               | Establishes a remote administration session.                                                     | Legitimate remote management.          | Unauthorized access to admin sessions.                          |
-| **NetExec**                       | Executes a command on a remote system.                                                           | Administrative tasks.                  | Attackers executing commands to compromise systems.             |
+#### 1. **Service Control Operations**
+These operations manage Windows services through the Service Control Manager (SCM).
 
-### Zeek-Cut Queries for Monitoring Malicious RPC Calls
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `OpenSCManagerW`                  | Opens a handle to the service control manager.                         |
+| `CreateServiceWOW64A`             | Creates a new service.                                                  |
+| `StartServiceA`                   | Starts a service that has been created but is not running.             |
+| `StopService`                      | Stops a running service.                                                |
+| `DeleteService`                    | Deletes a service from the service control manager.                    |
+| `QueryServiceStatus`               | Queries the status of a service.                                       |
+| `ChangeServiceConfig`             | Changes the configuration of an existing service.                      |
+| `CloseServiceHandle`               | Closes a handle to a service.                                          |
 
-1. **Monitoring for NetShareEnum Calls**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetShareEnum'
-   ```
+#### 2. **Registry Operations**
+These operations manipulate the Windows Registry.
 
-2. **Session Enumeration Attempts**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetSessionEnum'
-   ```
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `BaseRegCreateKey`                | Creates a new registry key.                                            |
+| `BaseRegSetValue`                 | Sets the value of a registry key.                                      |
+| `BaseRegDeleteValue`              | Deletes a value from a registry key.                                   |
+| `BaseRegOpenKey`                  | Opens an existing registry key.                                        |
+| `BaseRegQueryValue`               | Retrieves the value of a registry key.                                 |
+| `BaseRegDeleteKey`                | Deletes a registry key.                                                |
+| `BaseRegEnumKey`                  | Enumerates subkeys of a specified registry key.                        |
 
-3. **User Lookup Monitoring**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'SamrLookupNamesInDomain'
-   ```
+#### 3. **Authentication and Security Operations**
+These operations deal with authentication mechanisms in Windows.
 
-4. **Domain Enumeration**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'SamrEnumerateDomainsInSam'
-   ```
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `ImpersonateNamedPipeClient`       | Allows a server to impersonate a client.                               |
+| `RevertToSelf`                    | Reverts the impersonation back to the original security context.       |
+| `SetSecurityObject`               | Sets the security descriptor for a specified object.                   |
+| `GetSecurityObject`               | Retrieves the security descriptor for a specified object.              |
 
-5. **Unauthorized Security Descriptor Changes**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'SetSecurityObject'
-   ```
+#### 4. **File Operations**
+These operations manage file access and manipulation.
 
-6. **Service Control Commands**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'ServiceControl'
-   ```
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `NtCreateFile`                    | Creates or opens a file.                                               |
+| `NtReadFile`                      | Reads data from a file.                                               |
+| `NtWriteFile`                     | Writes data to a file.                                                |
+| `NtDeleteFile`                    | Deletes a file.                                                       |
 
-7. **User Enumeration Monitoring**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetUserEnum'
-   ```
+#### 5. **Process and Thread Operations**
+These operations manage processes and threads in the system.
 
-8. **File Enumeration Activities**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetrFileEnum'
-   ```
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `CreateProcess`                   | Creates a new process and its primary thread.                          |
+| `OpenProcess`                     | Opens an existing local process.                                       |
+| `TerminateProcess`                | Ends the specified process.                                            |
+| `CreateRemoteThread`              | Creates a thread that runs in the virtual address space of another process. |
 
-9. **DCOM Connection Attempts**
-   ```bash
-   cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'DcomConnect'
-   ```
+#### 6. **Network Operations**
+These operations manage network connections and configurations.
 
-10. **Monitor for Remote Command Execution Attempts**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'RExec'
-    ```
+| **Operation**                      | **Description**                                                          |
+|------------------------------------|--------------------------------------------------------------------------|
+| `NetrServerConnect`               | Establishes a connection to a server.                                  |
+| `NetrShareAdd`                    | Adds a new share on the server.                                       |
+| `NetrShareDel`                    | Deletes a share on the server.                                        |
 
-11. **Authentication Challenges from Unusual Hosts**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetrServerReqChallenge'
-    ```
+### Tips for Usage
+- **Understanding Context**: Most of these operations are used in the context of exploitation and lateral movement in Windows environments.
+- **Mitre ATT&CK Mapping**: Many of these RPC calls relate to MITRE ATT&CK techniques, particularly in the execution and persistence tactics.
+- **Security Monitoring**: Monitor the usage of these calls in your environment as they may indicate suspicious activities.
 
-12. **Monitoring User Logon Attempts**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetrLogonSamLogon'
-    ```
-
-13. **Monitoring for DCOM Command Execution**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'DcomExecute'
-    ```
-
-14. **Remote Administration Session Monitoring**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetrRemoteAdmin'
-    ```
-
-15. **Execution of Remote Commands via NetExec**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'NetExec'
-    ```
-
-16. **Abnormal Patterns in Command Executions**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep -E 'RExec|NetExec|DcomExecute'
-    ```
-
-17. **Audit Commands for Multiple Users**
-    ```bash
-    cat dce_rpc.log | zeek-cut id.orig_h id.resp_h rpc_call | grep 'Remote Command Invocation'
-    ```
