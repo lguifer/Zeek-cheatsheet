@@ -88,9 +88,9 @@ cat dns.log | zeek-cut query | sort | uniq | grep -E '\.(dyndns|no-ip|duckdns|af
 
 ## 12. Checking Domain Registration Dates
 ```bash
-cat dns.log | zeek-cut query | sort | uniq | while read domain; do whois $domain | grep -E 'Domain Name|Creation Date'; done | grep "$(date -d '30 days ago' '+%Y-%m-%d')"
+cat dns.log | zeek-cut query | sort | uniq | while read domain; do creation_date=$(whois "$domain" | grep -E 'Creation Date' | head -n 1 | awk '{print $3}' | tr -d '\r'); [[ -n "$creation_date" ]] && [[ $(date -d "$creation_date" +%s) -ge $(date -d '180 days ago' +%s) ]] && echo "$domain - $creation_date"; done
 ```
 **Interpretation**:  
 - **Normal**: Domains that have been registered for a longer time (e.g., several months or years).
-- **Abnormal**: Newly registered domains (created within the last 30 days) may indicate potential malicious activity, especially if they are frequently queried or associated with unusual patterns.
+- **Abnormal**: Newly registered domains (created within the last 180 days) may indicate potential malicious activity, especially if they are frequently queried or associated with unusual patterns.
 ```
