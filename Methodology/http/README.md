@@ -171,4 +171,15 @@ Monitor PUT requests for uncommon or suspicious file extensions that should not 
 cat http.log | zeek-cut method uri | grep 'PUT' | grep -E '\.(php|exe|sh|pl|asp|jsp|dll)$' | sort | uniq -c | sort -nr
 ```
 
+Certainly! Below is a Zeek cut query that captures details about `PUT` requests, including the source and destination IP addresses and ports. This will help you monitor `PUT` requests more effectively.
+
+## 22. Zeek `PUT` Request Monitoring Query
+
+This query will extract information about `PUT` requests, including the source IP address, source port, destination IP address, destination port, and the requested URI.
+
+```bash
+cat http.log | zeek-cut id.orig_h id.orig_p id.resp_h id.resp_p uri | grep 'PUT'
+```
+
+
 ---
