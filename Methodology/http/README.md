@@ -178,7 +178,7 @@ Certainly! Below is a Zeek cut query that captures details about `PUT` requests,
 This query will extract information about `PUT` requests, including the source IP address, source port, destination IP address, destination port, and the requested URI.
 
 ```bash
-cat http.log | zeek-cut id.orig_h id.orig_p id.resp_h id.resp_p uri | grep 'PUT'
+cat http.log | zeek-cut id.orig_h id.orig_p id.resp_h id.resp_p method uri | grep -iE 'PUT|POST'
 ```
 
 
