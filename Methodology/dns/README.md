@@ -1,8 +1,3 @@
-```markdown
-# Analyzing `dns.log` for Anomalous Behaviors
-
-As a SOC analyst focusing exclusively on `dns.log`, here are several relevant queries to analyze anomalous behaviors that may indicate reconnaissance or other suspicious activities, along with interpretations of the results:
-
 ## 1. Identify Unusual Number of DNS Queries from a Single IP
 ```bash
 cat dns.log | zeek-cut id.orig_h | sort | uniq -c | sort -nr | awk '$1 > 100'
