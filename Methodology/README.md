@@ -6,7 +6,7 @@ This playbook provides a structured approach to investigating network activity u
 
 ## Table of Contents
 
-1. [Introduction](# 1. Introduction)
+1. [Introduction](#1-introduction)
 2. [Reconnaissance](#reconnaissance)
 3. [Initial Access](#initial-access)
 4. [Execution](#execution)
