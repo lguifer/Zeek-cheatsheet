@@ -93,6 +93,8 @@ To begin, ensure you have a Debian-based distribution (such as Debian, Ubuntu, o
 ---
 
 
+Here’s the updated section on "Reconnaissance," including relevant fields for each `zeek-cut` command to filter the logs effectively:
+
 ## 2. Reconnaissance
 
 **Objective**: Detect initial probing and scanning activities by adversaries to gather information about the network.
@@ -109,33 +111,33 @@ Reconnaissance is the first phase of the attack lifecycle where adversaries atte
 
 ### Specific Log Queries
 
-The following Zeek log queries can be used to detect reconnaissance activities:
+The following Zeek log queries can be used to detect reconnaissance activities, including relevant fields for `zeek-cut`:
 
 1. **Detect Port Scanning**:
    Identify multiple connection attempts from a single source IP address to various ports on a destination host:
    ```bash
-   zeek-cut -d$'	' conn.log | awk '{if ($5 ~ /[0-9]+/) {print $1, $5}}' | sort | uniq -c | sort -nr | awk '$1 > 10'
+   cat conn.log | zeek-cut id.orig_h id.resp_p | awk '{if ($2 ~ /[0-9]+/) {print $1, $2}}' | sort | uniq -c | sort -nr | awk '$1 > 10'
    ```
-   This command checks for any source IP that connects to more than 10 different ports on the same destination.
+   This command checks for any source IP (`id.orig_h`) that connects to more than 10 different ports (`id.resp_p`) on the same destination.
 
 2. **Identify Suspicious DNS Queries**:
    Monitor for DNS queries that resolve to multiple IP addresses or unusual domains that may indicate domain generation algorithms (DGA):
    ```bash
-   zeek-cut -d$'	' dns.log | awk '{if ($6 ~ /\.xyz$|\.top$|\.online$/) {print $1, $6}}' | sort | uniq -c | sort -nr
+   cat dns.log | zeek-cut id.orig_h query | awk '{if ($2 ~ /\.xyz$|\.top$|\.online$/) {print $1, $2}}' | sort | uniq -c | sort -nr
    ```
    This query focuses on domains with common DGA patterns, which can be indicative of reconnaissance.
 
 3. **Analyze Connection Attempts**:
    Check for a high number of connection attempts to a single port, which may indicate scanning behavior:
    ```bash
-   zeek-cut -d$'	' conn.log | awk '$5 == "80" || $5 == "443" {print $1, $2, $5}' | sort | uniq -c | sort -nr | awk '$1 > 20'
+   cat conn.log | zeek-cut id.orig_h id.resp_p | awk '$2 == "80" || $2 == "443" {print $1, $2}' | sort | uniq -c | sort -nr | awk '$1 > 20'
    ```
-   This command filters for HTTP and HTTPS traffic, indicating potential scanning for web services.
+   This command filters for HTTP (`80`) and HTTPS (`443`) traffic, indicating potential scanning for web services.
 
 4. **Examine Unusual User-Agent Strings**:
    Identify unusual or malformed user-agent strings in HTTP requests, which may suggest automated scanning tools:
    ```bash
-   zeek-cut -d$'	' http.log | awk '{print $4}' | sort | uniq -c | sort -nr | awk '$1 > 10'
+   cat http.log | zeek-cut id.orig_h user_agent | awk '{print $2}' | sort | uniq -c | sort -nr | awk '$1 > 10'
    ```
    This query helps identify any user-agent strings that appear suspicious or are overly frequent.
 
