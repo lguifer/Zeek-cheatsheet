@@ -88,7 +88,54 @@ cat dns.log | zeek-cut query | sort | uniq | grep -E '\.(dyndns|no-ip|duckdns|af
 
 ## 12. Checking Domain Registration Dates
 ```bash
-cat dns.log | zeek-cut query | sort | uniq | while read domain; do creation_date=$(whois "$domain" | grep -E 'Creation Date' | head -n 1 | awk '{print $3}' | tr -d '\r'); [[ -n "$creation_date" ]] && [[ $(date -d "$creation_date" +%s) -ge $(date -d '180 days ago' +%s) ]] && echo "$domain - $creation_date"; done
+#!/bin/bash
+
+# Contar el total de dominios
+total_domains=$(cat dns.log | zeek-cut query | sort | uniq | wc -l)
+echo "Total de dominios: $total_domains"
+
+# Archivo temporal para el contador de progreso
+progress_file="progress_counter.txt"
+echo 0 > $progress_file
+
+# Función para obtener la fecha de creación
+get_creation_date() {
+    domain=$1
+    creation_date=$(timeout 5 whois "$domain" | grep -E 'Creation Date' | head -n 1 | awk '{print $3}' | tr -d '\r')
+    if [[ -n "$creation_date" ]]; then
+        creation_date_timestamp=$(date -d "$creation_date" +%s)
+        cutoff_timestamp=$(date -d '180 days ago' +%s)
+        if [[ $creation_date_timestamp -ge $cutoff_timestamp ]]; then
+            echo "$domain - $creation_date"
+        fi
+    fi
+}
+
+# Función para procesar cada dominio e imprimir el progreso
+process_domain() {
+    domain=$1
+    result=$(get_creation_date "$domain")
+    if [[ -n "$result" ]]; then
+        echo "$result"
+    fi
+    # Actualizar el contador de progreso en el archivo temporal
+    #progress_counter=$(cat $progress_file)
+    progress_counter=$(wc -l $progress_file | awk '{print $1}')
+
+    ((progress_counter++))
+    echo "$progress_counter" >> $progress_file
+    echo "Processed: $progress_counter/$total_domains"
+    #echo "Procesados: $progress_counter/$total_domains" | sort -nr | head -n 1
+}
+
+# Exportar las funciones necesarias para usar en paralelo
+export -f get_creation_date
+export -f process_domain
+export total_domains
+export progress_file
+
+# Leer los dominios, procesarlos en paralelo y mostrar el progreso
+cat dns.log | zeek-cut query | sort | uniq | parallel -j 10 process_domain
 ```
 **Interpretation**:  
 - **Normal**: Domains that have been registered for a longer time (e.g., several months or years).
